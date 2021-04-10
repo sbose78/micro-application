@@ -82,7 +82,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.UserApplicationReconciler{
+	if err = (&controllers.MicroApplicationReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("MicroApplication"),
 		Scheme: mgr.GetScheme(),

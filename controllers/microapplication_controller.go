@@ -46,8 +46,8 @@ import (
 	authorization "k8s.io/api/authorization/v1"
 )
 
-// UserApplicationReconciler reconciles a MicroApplication object
-type UserApplicationReconciler struct {
+// MicroApplicationReconciler reconciles a MicroApplication object
+type MicroApplicationReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
@@ -66,27 +66,27 @@ type UserApplicationReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
-func (r *UserApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *MicroApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("microapplication", req.NamespacedName)
 
 	// Controller
 	// your logic here
-	userApplication := &argoprojiov1alpha1.MicroApplication{}
-	userApplication.Name = req.Name
-	userApplication.Namespace = req.Namespace
-	err := r.Get(ctx, req.NamespacedName, userApplication)
+	microApplication := &argoprojiov1alpha1.MicroApplication{}
+	microApplication.Name = req.Name
+	microApplication.Namespace = req.Namespace
+	err := r.Get(ctx, req.NamespacedName, microApplication)
 	if err != nil {
 		return ctrl.Result{}, nil
 	}
 
 	// Ensure latest revision is checkedout
-	namespacePath := fmt.Sprintf("/tmp/%s", userApplication.Namespace)
+	namespacePath := fmt.Sprintf("/tmp/%s", microApplication.Namespace)
 	err = os.Mkdir(namespacePath, 0755)
 	if err != nil {
 		println(err)
 	}
 
-	namespacedResourcePath := fmt.Sprintf("/tmp/%s/%s", userApplication.Namespace, userApplication.Name)
+	namespacedResourcePath := fmt.Sprintf("/tmp/%s/%s", microApplication.Namespace, microApplication.Name)
 	err = os.Mkdir(namespacedResourcePath, 0755)
 	if err != nil {
 		println(err)
@@ -95,7 +95,7 @@ func (r *UserApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// Update code from Git, ignore everything on the way ;)
 
 	_, err = git.PlainClone(namespacedResourcePath, false, &git.CloneOptions{
-		URL:      userApplication.Spec.RepoURL,
+		URL:      microApplication.Spec.RepoURL,
 		Progress: os.Stdout,
 	})
 	if err != nil {
@@ -116,19 +116,19 @@ func (r *UserApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		println(err)
 	}
 
-	resources, _, err := parseManifests(namespacedResourcePath, []string{userApplication.Spec.Path})
+	resources, _, err := parseManifests(namespacedResourcePath, []string{microApplication.Spec.Path})
 	if err != nil {
 		println(err)
 	}
 
-	creator := userApplication.Annotations["microapplication.argoproj.io/creator"]
+	creator := microApplication.Annotations["microapplication.argoproj.io/creator"]
 
 	isAllowed := true
 	for _, resource := range resources {
 
 		targetNs := resource.GetNamespace()
 		if targetNs == "" {
-			targetNs = userApplication.Namespace
+			targetNs = microApplication.Namespace
 		}
 
 		plural, _ := meta.UnsafeGuessKindToResource(resource.GroupVersionKind())
@@ -162,7 +162,7 @@ func (r *UserApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	for _, resource := range resources {
 		targetNs := resource.GetNamespace()
 		if targetNs == "" {
-			targetNs = userApplication.Namespace
+			targetNs = microApplication.Namespace
 		}
 
 		fetchedResource := &unstructured.Unstructured{}
@@ -180,7 +180,7 @@ func (r *UserApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 		if !isFound {
 			if resource.GetNamespace() == "" {
-				resource.SetNamespace(userApplication.Namespace)
+				resource.SetNamespace(microApplication.Namespace)
 			}
 			err = r.Create(ctx, resource, &client.CreateOptions{})
 			if err != nil {
@@ -189,8 +189,8 @@ func (r *UserApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}
 
-	userApplication.Status.Allowed = isAllowed
-	err = r.Status().Update(ctx, userApplication, &client.UpdateOptions{})
+	microApplication.Status.Allowed = isAllowed
+	err = r.Status().Update(ctx, microApplication, &client.UpdateOptions{})
 	if err != nil {
 		return ctrl.Result{}, nil
 	}
@@ -274,7 +274,7 @@ func parseManifests(repoPath string, paths []string) ([]*unstructured.Unstructur
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *UserApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MicroApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&argoprojiov1alpha1.MicroApplication{}).
 		Complete(r)

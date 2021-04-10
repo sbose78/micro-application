@@ -23,8 +23,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// UserApplicationSpec defines the desired state of MicroApplication
-type UserApplicationSpec struct {
+// MicroApplicationSpec defines the desired state of MicroApplication
+type MicroApplicationSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -38,8 +38,8 @@ type UserApplicationSpec struct {
 	TargetRevision string `json:"targetRevision,omitempty"`
 }
 
-// UserApplicationStatus defines the observed state of MicroApplication
-type UserApplicationStatus struct {
+// MicroApplicationStatus defines the observed state of MicroApplication
+type MicroApplicationStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Allowed bool   `json:"allowed"`
@@ -54,19 +54,19 @@ type MicroApplication struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   UserApplicationSpec   `json:"spec,omitempty"`
-	Status UserApplicationStatus `json:"status,omitempty"`
+	Spec   MicroApplicationSpec   `json:"spec,omitempty"`
+	Status MicroApplicationStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// UserApplicationList contains a list of MicroApplication
-type UserApplicationList struct {
+// MicroApplicationList contains a list of MicroApplication
+type MicroApplicationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []MicroApplication `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&MicroApplication{}, &UserApplicationList{})
+	SchemeBuilder.Register(&MicroApplication{}, &MicroApplicationList{})
 }

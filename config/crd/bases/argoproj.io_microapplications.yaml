@@ -34,7 +34,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: UserApplicationSpec defines the desired state of MicroApplication
+            description: MicroApplicationSpec defines the desired state of MicroApplication
             properties:
               path:
                 description: Path is a directory path within the Git repository, and
@@ -54,7 +54,7 @@ spec:
             - repoURL
             type: object
           status:
-            description: UserApplicationStatus defines the observed state of MicroApplication
+            description: MicroApplicationStatus defines the observed state of MicroApplication
             properties:
               allowed:
                 description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
