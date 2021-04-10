@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: MicroApplication
+metadata:
+  name: microapplication-sample
+  annotations:
+    "microapplication.argoproj.io/creator": "consoledeveloper" 
+spec:
+  # Add fields here
+  repoURL: https://github.com/argoproj/argocd-example-apps
+  path: guestbook
+---
+apiVersion: argoproj.io/v1alpha1
+kind: MicroApplication
+metadata:
+  name: microapplication-sample
+  annotations:
+    "microapplication.argoproj.io/creator": "consoledeveloper" 
+spec:
+  # Add fields here
+  repoURL: https://github.com/sbose78/gitops-samples
+  path: developer/new-app
+

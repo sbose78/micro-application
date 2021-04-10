@@ -1,0 +1,18 @@
+domain: github.com
+layout: go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: micro-application
+repo: github.com/sbose78/micro-application
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: github.com
+  group: argoproj.io
+  kind: MicroApplication
+  path: github.com/sbose78/micro-application/api/v1alpha1
+  version: v1alpha1
+version: "3"
