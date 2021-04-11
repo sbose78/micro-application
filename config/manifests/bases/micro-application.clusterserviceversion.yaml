@@ -1,0 +1,40 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: micro-application.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions: {}
+  description: Sync your Kubernetes manifests from Git and apply them on your cluster if Kubernetes RBAC allows you to do so
+  displayName: Micro Application
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - cd
+  - gitops
+  - devtools
+  links:
+  - name: Micro Application
+    url: https://micro-application.domain
+  maturity: alpha
+  provider:
+    name: Shoubhik Bose
+  version: 0.0.0

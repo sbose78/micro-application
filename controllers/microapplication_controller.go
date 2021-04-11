@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	kubeyaml "k8s.io/apimachinery/pkg/util/yaml"
 
 	//"k8s.io/client-go/pkg/apis/authorization"
@@ -159,34 +158,18 @@ func (r *MicroApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		}
 	}
 
-	for _, resource := range resources {
-		targetNs := resource.GetNamespace()
-		if targetNs == "" {
-			targetNs = microApplication.Namespace
-		}
+	// kinda print, can be done better
+	k := fmt.Sprintf("kubectl apply -n %s -f %s/%s ", microApplication.Namespace, namespacedResourcePath, microApplication.Spec.Path)
+	fmt.Println(k)
 
-		fetchedResource := &unstructured.Unstructured{}
-		fetchedResource.SetKind(resource.GetKind())
-		fetchedResource.SetAPIVersion(resource.GetAPIVersion())
+	// actual command
+	cmd := exec.Command("kubectl", "apply", "-n", microApplication.Namespace, "-f", fmt.Sprintf("%s/%s", namespacedResourcePath, microApplication.Spec.Path))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-		err = r.Get(ctx, types.NamespacedName{Name: resource.GetName(), Namespace: targetNs}, fetchedResource)
-		isFound := true
-		if err != nil {
-			// for now assume!
-			isFound = false
-		}
-
-		// yet to figure out how to do a diff
-
-		if !isFound {
-			if resource.GetNamespace() == "" {
-				resource.SetNamespace(microApplication.Namespace)
-			}
-			err = r.Create(ctx, resource, &client.CreateOptions{})
-			if err != nil {
-				return ctrl.Result{}, nil
-			}
-		}
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println("Error ", err)
 	}
 
 	microApplication.Status.Allowed = isAllowed

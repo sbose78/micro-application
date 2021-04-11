@@ -1,0 +1,171 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "argoproj.io/v1alpha1",
+          "kind": "MicroApplication",
+          "metadata": {
+            "annotations": {
+              "generated-creator": "consoledeveloper"
+            },
+            "name": "microapplication-sample"
+          },
+          "spec": {
+            "path": "developer/new-app",
+            "repoURL": "https://github.com/sbose78/gitops-samples"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.4.0+git
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: micro-application.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: MicroApplication
+      name: microapplications.argoproj.io
+      version: v1alpha1
+  description: Sync your Kubernetes manifests from Git and apply them on your cluster if Kubernetes RBAC allows you to do so
+  displayName: Micro Application
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - microapplications
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - microapplications/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - microapplications/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: micro-application-controller-manager
+      deployments:
+      - name: micro-application-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --leader-elect
+                command:
+                - /manager
+                image: quay.io/shbose/test:microapplication-controller
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 600Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: micro-application-controller-manager
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          - coordination.k8s.io
+          resources:
+          - configmaps
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: micro-application-controller-manager
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - cd
+  - gitops
+  - devtools
+  links:
+  - name: Micro Application
+    url: https://micro-application.domain
+  maturity: alpha
+  provider:
+    name: Shoubhik Bose
+  version: 0.0.1
