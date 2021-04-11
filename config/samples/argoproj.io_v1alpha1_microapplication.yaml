@@ -3,7 +3,7 @@ kind: MicroApplication
 metadata:
   name: microapplication-sample
   annotations:
-    "microapplication.argoproj.io/creator": "consoledeveloper" 
+    "generated-creator": "consoledeveloper" 
 spec:
   # Add fields here
   repoURL: https://github.com/argoproj/argocd-example-apps
@@ -14,7 +14,7 @@ kind: MicroApplication
 metadata:
   name: microapplication-sample
   annotations:
-    "microapplication.argoproj.io/creator": "consoledeveloper" 
+    "generated-creator": "consoledeveloper" 
 spec:
   # Add fields here
   repoURL: https://github.com/sbose78/gitops-samples

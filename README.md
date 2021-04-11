@@ -11,7 +11,7 @@ metadata:
   name: microapplication-sample
   namespace: sbose
   annotations:
-    "microapplication.argoproj.io/creator": "consoledeveloper" 
+    "generated-creator": "consoledeveloper" 
 spec:
   repoURL: https://github.com/sbose78/gitops-samples
   path: developer/new-app

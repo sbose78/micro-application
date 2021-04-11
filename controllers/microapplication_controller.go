@@ -121,7 +121,7 @@ func (r *MicroApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		println(err)
 	}
 
-	creator := microApplication.Annotations["microapplication.argoproj.io/creator"]
+	creator := microApplication.Annotations["generated-creator"]
 
 	isAllowed := true
 	for _, resource := range resources {
