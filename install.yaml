@@ -357,7 +357,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: quay.io/shbose/test:microapplication-controller
+        image: quay.io/shbose/microapplication-controller:v0.0.1
         livenessProbe:
           httpGet:
             path: /healthz
