@@ -125,8 +125,7 @@ func (r *MicroApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		plural, _ := meta.UnsafeGuessKindToResource(resource.GroupVersionKind())
 		sar := authorization.SubjectAccessReview{
 			Spec: authorization.SubjectAccessReviewSpec{
-				Groups: []string{"cluster"},
-				User:   creator,
+				User: creator,
 
 				ResourceAttributes: &authorization.ResourceAttributes{
 					Group:     resource.GroupVersionKind().Group,
