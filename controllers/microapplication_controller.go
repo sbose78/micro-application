@@ -261,10 +261,27 @@ func parseManifests(repoPath string, paths []string) ([]*unstructured.Unstructur
 func (r *MicroApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	// Not the ideal place, but this is where we can set things up
+	if os.Getenv("INSTALL_ADMISSION_CONTROLLER") == "true" {
+		installAdmissionController()
+	}
 
+	p := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldObject := e.ObjectOld.(*v1alpha1.MicroApplication)
+			newObject := e.ObjectNew.(*v1alpha1.MicroApplication)
+			return oldObject.ResourceVersion == newObject.ResourceVersion
+		},
+	}
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&argoprojiov1alpha1.MicroApplication{}).
+		WithEventFilter(p).
+		Complete(r)
+}
+
+func installAdmissionController() error {
 	// TODO: Create a separate mount path.
 	clonePath := "/tmp/setup/install"
-	manifestPath := "manifests"
+	manifestPath := "manifests/openshift"
 
 	manifestPathEnvValue := os.Getenv("ADMISSION_CONTROLLER_REPO_PATH")
 	if manifestPathEnvValue != "" {
@@ -286,20 +303,8 @@ func (r *MicroApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println("Error ", err)
-		return err
 	}
-
-	p := predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldObject := e.ObjectOld.(*v1alpha1.MicroApplication)
-			newObject := e.ObjectNew.(*v1alpha1.MicroApplication)
-			return oldObject.ResourceVersion == newObject.ResourceVersion
-		},
-	}
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&argoprojiov1alpha1.MicroApplication{}).
-		WithEventFilter(p).
-		Complete(r)
+	return err
 }
 
 func cloneRepository(cloneURL string, clonePath string) error {

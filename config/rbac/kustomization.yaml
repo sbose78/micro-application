@@ -6,9 +6,10 @@ resources:
 # subjects if changing service account names.
 - service_account.yaml
 - role.yaml
-- custom_role.yaml
 - role_binding.yaml
+- custom_role.yaml
 - custom_role_binding.yaml
+- custom_cluster_admin_role_binding.yaml
 - leader_election_role.yaml
 - leader_election_role_binding.yaml
 - microapplication_editor_role.yaml
