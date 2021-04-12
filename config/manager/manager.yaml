@@ -24,8 +24,15 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+      volumes:
+      - name: tmp
+        emptyDir: {}
       containers:
-      - command:
+      - name: argocd-repo-server
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+        command:
         - /manager
         args:
         - --leader-elect

@@ -42,8 +42,8 @@ type MicroApplicationSpec struct {
 type MicroApplicationStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Allowed bool   `json:"allowed"`
-	Status  string `json:"status"`
+	Allowed  bool   `json:"allowed"`
+	LastSync string `json:"lastSync"`
 }
 
 //+kubebuilder:object:root=true

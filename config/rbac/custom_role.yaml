@@ -1,0 +1,46 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-custom-role
+rules:
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  verbs:
+  - get
+  - create
+  - list
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+
+
+# from server for: "/tmp/setup/install/manifests/install.yaml": mutatingwebhookconfigurations.admissionregistration.k8s.io "microapplication-webhook" is forbidden: User "system:serviceaccount:micro-application-system:micro-application-controller-manager" cannot get resource "mutatingwebhookconfigurations" in API group "admissionregistration.k8s.io" at the cluster scope
+

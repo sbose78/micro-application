@@ -41,6 +41,42 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          verbs:
+          - get
+          - create
+          - list
+          - patch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+        - apiGroups:
           - argoproj.io
           resources:
           - microapplications
@@ -78,6 +114,7 @@ spec:
           - subjectaccessreviews
           verbs:
           - create
+          - get
         serviceAccountName: micro-application-controller-manager
       deployments:
       - name: micro-application-controller-manager
@@ -120,10 +157,16 @@ spec:
                     memory: 20Mi
                 securityContext:
                   allowPrivilegeEscalation: false
+                volumeMounts:
+                - mountPath: /tmp
+                  name: tmp
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: micro-application-controller-manager
               terminationGracePeriodSeconds: 10
+              volumes:
+              - emptyDir: {}
+                name: tmp
       permissions:
       - rules:
         - apiGroups:

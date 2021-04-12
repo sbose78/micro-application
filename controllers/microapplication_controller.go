@@ -27,6 +27,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -38,9 +39,12 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	git "github.com/go-git/go-git/v5" // with go modules enabled (GO111MODULE=on or outside GOPATH)
 
+	"github.com/sbose78/micro-application/api/v1alpha1"
 	argoprojiov1alpha1 "github.com/sbose78/micro-application/api/v1alpha1"
 	authorization "k8s.io/api/authorization/v1"
 )
@@ -80,40 +84,13 @@ func (r *MicroApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	// Ensure latest revision is checkedout
 	namespacePath := fmt.Sprintf("/tmp/%s", microApplication.Namespace)
-	err = os.Mkdir(namespacePath, 0755)
-	if err != nil {
-		println(err)
-	}
+	os.Mkdir(namespacePath, 0755)
 
 	namespacedResourcePath := fmt.Sprintf("/tmp/%s/%s", microApplication.Namespace, microApplication.Name)
-	err = os.Mkdir(namespacedResourcePath, 0755)
-	if err != nil {
-		println(err)
-	}
+	os.Mkdir(namespacedResourcePath, 0755)
 
 	// Update code from Git, ignore everything on the way ;)
-
-	_, err = git.PlainClone(namespacedResourcePath, false, &git.CloneOptions{
-		URL:      microApplication.Spec.RepoURL,
-		Progress: os.Stdout,
-	})
-	if err != nil {
-		println(err)
-	}
-
-	rr, err := git.PlainOpen(namespacedResourcePath)
-	if err != nil {
-		println(err)
-	}
-	w, err := rr.Worktree()
-	if err != nil {
-		println(err)
-	}
-
-	err = w.Pull(&git.PullOptions{RemoteName: "origin"})
-	if err != nil {
-		println(err)
-	}
+	cloneRepository(microApplication.Spec.RepoURL, namespacedResourcePath)
 
 	resources, _, err := parseManifests(namespacedResourcePath, []string{microApplication.Spec.Path})
 	if err != nil {
@@ -121,9 +98,24 @@ func (r *MicroApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	creator := microApplication.Annotations["generated-creator"]
-
 	isAllowed := true
+
 	for _, resource := range resources {
+
+		// skip validation if the annotation isn't set.
+		// this would happen if the admission controller wasn't installed.
+		// Definitely not recommended but I wouldn't inconevnience you ;)
+		if creator == "" {
+			break
+		}
+		if creator == "kube:admin" {
+
+			// kube:admin isn't a real user on the cluster
+			// Given that it's a well-known user, we'll skip the SubjectAccessReview
+			// check.
+			isAllowed = true
+			break
+		}
 
 		targetNs := resource.GetNamespace()
 		if targetNs == "" {
@@ -133,7 +125,8 @@ func (r *MicroApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		plural, _ := meta.UnsafeGuessKindToResource(resource.GroupVersionKind())
 		sar := authorization.SubjectAccessReview{
 			Spec: authorization.SubjectAccessReviewSpec{
-				User: creator,
+				Groups: []string{"cluster"},
+				User:   creator,
 
 				ResourceAttributes: &authorization.ResourceAttributes{
 					Group:     resource.GroupVersionKind().Group,
@@ -154,7 +147,14 @@ func (r *MicroApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		fmt.Println("sar.Status.Allowed", sar.Status.Allowed)
 		isAllowed = sar.Status.Allowed
 		if !isAllowed {
-			break
+			microApplication.Status.Allowed = isAllowed
+			microApplication.Status.LastSync = time.Now().String()
+
+			err = r.Status().Update(ctx, microApplication, &client.UpdateOptions{})
+			if err != nil {
+				fmt.Println(err)
+			}
+			return ctrl.Result{}, nil
 		}
 	}
 
@@ -169,15 +169,16 @@ func (r *MicroApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	err = cmd.Run()
 	if err != nil {
-		fmt.Println("Error ", err)
+		fmt.Println("Error while executing command", err)
 	}
 
 	microApplication.Status.Allowed = isAllowed
+	microApplication.Status.LastSync = time.Now().String()
+
 	err = r.Status().Update(ctx, microApplication, &client.UpdateOptions{})
 	if err != nil {
-		return ctrl.Result{}, nil
+		fmt.Println(err)
 	}
-
 	return ctrl.Result{}, nil
 }
 
@@ -258,7 +259,71 @@ func parseManifests(repoPath string, paths []string) ([]*unstructured.Unstructur
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MicroApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+
+	// Not the ideal place, but this is where we can set things up
+
+	// TODO: Create a separate mount path.
+	clonePath := "/tmp/setup/install"
+	manifestPath := "manifests"
+
+	manifestPathEnvValue := os.Getenv("ADMISSION_CONTROLLER_REPO_PATH")
+	if manifestPathEnvValue != "" {
+		manifestPath = manifestPathEnvValue
+	}
+
+	cloneURL := "https://github.com/sbose78/micro-application-admission"
+	cloneRepository(cloneURL, clonePath)
+
+	// print as an FYI, can be done better
+	k := fmt.Sprintf("kubectl apply -f %s", clonePath)
+	fmt.Println(k)
+
+	// actual command
+	cmd := exec.Command("kubectl", "apply", "-f", fmt.Sprintf("%s/%s", clonePath, manifestPath))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println("Error ", err)
+		return err
+	}
+
+	p := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldObject := e.ObjectOld.(*v1alpha1.MicroApplication)
+			newObject := e.ObjectNew.(*v1alpha1.MicroApplication)
+			return oldObject.ResourceVersion == newObject.ResourceVersion
+		},
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&argoprojiov1alpha1.MicroApplication{}).
+		WithEventFilter(p).
 		Complete(r)
+}
+
+func cloneRepository(cloneURL string, clonePath string) error {
+
+	_, err := git.PlainClone(clonePath, false, &git.CloneOptions{
+		URL:      cloneURL,
+		Progress: os.Stdout,
+	})
+	if err != nil {
+		return err
+	}
+
+	rr, err := git.PlainOpen(clonePath)
+	if err != nil {
+		return err
+	}
+	w, err := rr.Worktree()
+	if err != nil {
+		return err
+	}
+
+	err = w.Pull(&git.PullOptions{RemoteName: "origin"})
+	if err != nil {
+		return err
+	}
+	return err
 }

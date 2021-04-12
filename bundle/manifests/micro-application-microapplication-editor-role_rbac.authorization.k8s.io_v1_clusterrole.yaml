@@ -1,10 +1,10 @@
-# permissions for end users to edit microapplications.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: microapplication-editor-role
+  creationTimestamp: null
   labels:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
+  name: micro-application-microapplication-editor-role
 rules:
 - apiGroups:
   - argoproj.io
