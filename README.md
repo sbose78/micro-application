@@ -30,7 +30,7 @@ Conversely, if the user `consoledeveloper` has permissions to create the resourc
 
 2. The MicroApplication controller does a *`SubjectAccessReview`* to verify if the `generated-creator` is allowed to create the resources in `.spec.repoURL`+`.spec.path`
 
-3. The controller polls the Git repository at frequent intervals to pull down the latest changes from git and apply them.
+3. The controller polls the Git repository at frequent intervals to pull down the latest changes from git and applies them.
 
 ## Install
 
