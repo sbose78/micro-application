@@ -308,13 +308,10 @@ func installAdmissionController() error {
 
 func cloneRepository(cloneURL string, clonePath string) error {
 
-	_, err := git.PlainClone(clonePath, false, &git.CloneOptions{
+	git.PlainClone(clonePath, false, &git.CloneOptions{
 		URL:      cloneURL,
 		Progress: os.Stdout,
 	})
-	if err != nil {
-		return err
-	}
 
 	rr, err := git.PlainOpen(clonePath)
 	if err != nil {
